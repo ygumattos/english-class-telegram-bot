@@ -1,10 +1,9 @@
-import dotenv from 'dotenv'
-dotenv.config()
+require('dotenv').config()
 
-export default ({
+module.exports = ({
     telegram: {
         token: process.env.TELEGRAM_TOKEN,
-        apiUrl: `${process.env.API_URL}${'token'}`,
-        apiFileUrl: `${process.env.API_FILE_URL}${'token'}`,
+        apiUrl: `${process.env.API_URL}${process.env.TELEGRAM_TOKEN}`,
+        apiFileUrl: `${process.env.API_FILE_URL}${process.env.TELEGRAM_TOKEN}`,
     }
 })
