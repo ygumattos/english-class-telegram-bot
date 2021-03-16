@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Bot for a telegram",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "start": "node --experimental-json-modules src/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -17,6 +19,7 @@
   },
   "homepage": "https://github.com/ygumattos/english-class-telegram-bot#readme",
   "dependencies": {
+    "dotenv": "^8.2.0",
     "telegraf": "^4.2.1"
   }
 }
