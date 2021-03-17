@@ -1,0 +1,18 @@
+{
+  "sessions": [
+    {
+      "id": "739269278:739269278",
+      "data": {
+        "username": "ygormattos",
+        "language": "en",
+        "voiceId": "AwACAgEAAxkBAAPtYFHzvMPU7bga2W4xMKgYkEHXOKwAAmsBAAIszIhG-G43-FGKXc0eBA",
+        "studentsUsername": [
+          "@ygormattos",
+          "@DaviOMalvadao",
+          "@test"
+        ],
+        "validateAnswer": false
+      }
+    }
+  ]
+}
