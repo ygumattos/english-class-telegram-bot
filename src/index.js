@@ -1,4 +1,4 @@
-const { Telegraf, Extra, Markup } = require('telegraf')
+const { Telegraf, Extra, Markup, Telegram } = require('telegraf')
 const TelegrafStatelessQuestion = require('telegraf-stateless-question')
 const LocalSession = require('telegraf-session-local')
 const { createWriteStream } = require('fs')
@@ -10,6 +10,9 @@ const data = require('./database')
 
 // Instance bot
 const bot = new Telegraf(telegram.token)
+
+// Instance telegram options
+const telegramOptions = new Telegram(telegram.token)
 
 // Instance database session
 const databasePath = resolve(__dirname, 'database', 'session.json')
@@ -34,11 +37,11 @@ bot.start(content => {
 
 // Buttons
 
-const studentsButtons = (content) => content.session.studentsUsername.map(student => Markup.button.callback(student, `sendAudio ${student}`))
+const studentsButtons = (content) => content.session.studentsUsername.map(student => Markup.button.callback(student.name, `sendAudio ${student.id}`))
 
-// Commands
+// Listening
 
-bot.on("voice", async (content, next) => {
+bot.on('voice', async (content, next) => {
 
   const { voice: { file_id }, from: { username } } = content.message
   const filename = `${username}-${file_id}`
@@ -67,21 +70,55 @@ bot.on("voice", async (content, next) => {
 
 })
 
+bot.on('forward_date', (content) => {
+  const { forward_from: {
+    id,
+    language_code: language,
+    first_name,
+    last_name,
+  } } = content.message
+
+  const name = `${first_name} ${last_name}`
+
+  content.session.studentsUsername.push({
+    id,
+    name,
+    language
+  })
+
+  content.reply(`Aluno(a) ${name} salvo 😘️`)
+})
+
+// Commands
+
+bot.command('send_adm', async (content) => {
+  const { username, first_name, last_name } = content.message.from
+  const name = username ? username : `${first_name} ${last_name}`
+  const text = content.message.text.split(' ').filter((text, index) => index !== 0).join(' ')
+  const msg = `From: ${name} \nMsg: ${text}`
+  if (msg) return await telegramOptions.sendMessage(telegram.admId, msg)
+  content.reply('Não pode enviar msg vazia!! ')
+})
+
 bot.command('add_student', content => {
-  const [, studentUserName] = content.message.text.split(' ')
-  content.session.studentsUsername.push(studentUserName)
-  content.reply('Aluno salvo')
+  content.reply(`Você deve compartilhar uma msg do seu aluno(a) comigo ❤️`)
 })
 
 bot.command('list_students', content => {
   listStudents(content)
 })
 
+// Actions
+
+bot.action(/sendAudio (.+)/, async content => {
+  await telegramOptions.sendMessage(content.match[1], 'Oiiii')
+})
+
 // Functions
 
 const listStudents = (content) => {
   if (content.session.studentsUsername.length < 1) return content.reply('Adicione um studante com /add_student')
-  return content.reply('Qual aluno deseja enviar o audio?', {
+  return content.reply('Qual aluno(a) deseja enviar o audio? 🎶️', {
     ...Markup.inlineKeyboard(
       studentsButtons(content),
       { columns: 2 }

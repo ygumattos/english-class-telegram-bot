@@ -7,9 +7,11 @@
         "language": "en",
         "voiceId": "AwACAgEAAxkBAAPtYFHzvMPU7bga2W4xMKgYkEHXOKwAAmsBAAIszIhG-G43-FGKXc0eBA",
         "studentsUsername": [
-          "@ygormattos",
-          "@DaviOMalvadao",
-          "@test"
+          {
+            "id": 1242882633,
+            "name": "Tatiane Barros",
+            "language": "en"
+          }
         ],
         "validateAnswer": false
       }
