@@ -20,9 +20,9 @@ bot.use((new LocalSession({ database: databasePath })).middleware())
 
 // Init bot
 bot.start(content => {
-  const { username, language_code: language, first_name } = content.update.message.from
+  const { username, language_code: language, first_name, last_name } = content.update.message.from
 
-  content.session.username = username
+  content.session.username = username ? username : `${first_name}-${last_name}`
   content.session.language = language
   content.session.voiceId = null
   content.session.studentsUsername = []
@@ -80,8 +80,7 @@ bot.command('send_adm', async (content) => {
   const name = username ? username : `${first_name} ${last_name}`
   const text = content.message.text.split(' ').filter((text, index) => index !== 0).join(' ')
   const msg = `From: ${name} \nMsg: ${text}`
-  if (msg) return await telegramOptions.sendMessage(telegram.admId, msg)
-  content.reply('Não pode enviar msg vazia!! ')
+  await sendMessage({ userId: telegram.admId, msg })
 })
 
 bot.command('add_student', content => {
@@ -95,13 +94,18 @@ bot.command('list_students', content => {
 // Actions
 
 bot.action(/sendAudio (.+)/, async content => {
-  // await telegramOptions.sendMessage(content.match[1], 'Oiiii')
-
   const [userId, firstName, lastName] = content.match[1].split(' ')
   const userName = `${firstName} ${lastName}`
+  const { voiceId, username } = content.session
 
-  await sendAudio({ content, userId, userName })
+  if (!voiceId) return content.reply('Audio não localizo !!')
 
+  await sendAudio({ voiceId, userId })
+
+  const message = `${username} te enviou um audio 😘️`
+  await sendMessage({ userId, message })
+
+  content.reply(`${userName} recebeu seu audio 🤩️ `)
 })
 
 // Functions
@@ -116,35 +120,34 @@ const listStudents = (content) => {
   })
 }
 
-const sendAudio = async ({ content, userId, userName }) => {
-  const audioId = content.session.voiceId
-  const url = await content.telegram.getFileLink(audioId)
-
-  await downloadAudio({ url, audioId, name: userName })
-
-
+const sendAudio = async ({ voiceId, userId }) => {
+  await telegramOptions.sendVoice(userId, voiceId)
 }
 
-const downloadAudio = async ({ url, audioId, name }) => {
-
-  const filename = `${name}-${audioId}`
-  const path = resolve(__dirname, '..', 'temp', 'voices', `${filename}.ogg`)
-  const writer = createWriteStream(path)
-
-  const response = await axios({
-    url: url.href,
-    method: 'GET',
-    responseType: 'stream'
-  })
-
-  response.data.pipe(writer)
-
-  new Promise((resolve, reject) => {
-    writer.on('finish', resolve)
-    writer.on('error', reject)
-  })
-
+const sendMessage = async ({ userId, message }) => {
+  await telegramOptions.sendMessage(userId, message)
 }
+
+// const downloadAudio = async ({ url, audioId, name }) => {
+
+//   const filename = `${name}-${audioId}`
+//   const path = resolve(__dirname, '..', 'temp', 'voices', `${filename}.ogg`)
+//   const writer = createWriteStream(path)
+
+//   const response = await axios({
+//     url: url.href,
+//     method: 'GET',
+//     responseType: 'stream'
+//   })
+
+//   response.data.pipe(writer)
+
+//   new Promise((resolve, reject) => {
+//     writer.on('finish', resolve)
+//     writer.on('error', reject)
+//   })
+
+// }
 
 // Launch
 
