@@ -6,7 +6,7 @@ const { resolve } = require('path')
 const axios = require('axios')
 
 const { telegram } = require('./config')
-const data = require('./database')
+const { commandList } = require('./database')
 
 // Instance bot
 const bot = new Telegraf(telegram.token)
@@ -22,22 +22,20 @@ bot.use((new LocalSession({ database: databasePath })).middleware())
 bot.start(content => {
   const { username, language_code: language, first_name, last_name } = content.update.message.from
 
-  content.session.username = username ? username : `${first_name}-${last_name}`
+  content.session.username = username ? username : `${first_name} ${last_name}`
   content.session.language = language
   content.session.voiceId = null
   content.session.studentsUsername = []
 
-  console.log(content.session)
-
-  console.log({ username, language })
-
   content.reply(`Hiii, ${first_name}!`)
-  content.reply(`Lets goo to finish your class !!`)
+  content.reply(`Lets go to finish your class !! \nIf you need, I'm here 😎️ /help`)
 })
 
 // Buttons
 
 const studentsButtons = (content) => content.session.studentsUsername.map(student => Markup.button.callback(student.name, `sendAudio ${student.id} ${student.name}`))
+
+const commandButtons = () => commandList.map(command => Markup.button.callback(command, command))
 
 // Listening
 
@@ -45,12 +43,10 @@ bot.on('voice', async (content, next) => {
 
   const { voice: { file_id }, from: { username } } = content.message
 
-
-  console.log(content.session.voiceId)
-
-  if (content.session.voiceId) content.reply('Seu audio anterior foi substituido')
+  if (content.session.voiceId) return content.reply('Seu audio anterior foi substituido')
 
   content.session.voiceId = file_id
+  return content.reply('Audio salvo !')
 
 })
 
@@ -79,8 +75,8 @@ bot.command('send_adm', async (content) => {
   const { username, first_name, last_name } = content.message.from
   const name = username ? username : `${first_name} ${last_name}`
   const text = content.message.text.split(' ').filter((text, index) => index !== 0).join(' ')
-  const msg = `From: ${name} \nMsg: ${text}`
-  await sendMessage({ userId: telegram.admId, msg })
+  const message = `From: ${name} \nMsg: ${text}`
+  await sendMessage({ userId: telegram.admId, message })
 })
 
 bot.command('add_student', content => {
@@ -89,6 +85,10 @@ bot.command('add_student', content => {
 
 bot.command('list_students', content => {
   listStudents(content)
+})
+
+bot.command('help', content => {
+  listCommands(content)
 })
 
 // Actions
@@ -108,7 +108,21 @@ bot.action(/sendAudio (.+)/, async content => {
   content.reply(`${userName} recebeu seu audio 🤩️ `)
 })
 
+bot.action(/.+/, content => {
+  const command = content.match[0]
+  content.reply(`Click here 👉️ ${command}`);
+})
+
 // Functions
+
+const listCommands = (content) => {
+  return content.reply('Espero que te ajude 🙏️', {
+    ...Markup.inlineKeyboard(
+      commandButtons(),
+      { columns: 2 }
+    ),
+  })
+}
 
 const listStudents = (content) => {
   if (content.session.studentsUsername.length < 1) return content.reply('Adicione um studante com /add_student')

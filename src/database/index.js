@@ -1,3 +1,9 @@
-const data = []
+const commandList = [
+    '/send_adm',
+    '/add_student',
+    '/list_students'
+]
 
-module.exports = data
+module.exports = {
+    commandList
+}
