@@ -37,36 +37,20 @@ bot.start(content => {
 
 // Buttons
 
-const studentsButtons = (content) => content.session.studentsUsername.map(student => Markup.button.callback(student.name, `sendAudio ${student.id}`))
+const studentsButtons = (content) => content.session.studentsUsername.map(student => Markup.button.callback(student.name, `sendAudio ${student.id} ${student.name}`))
 
 // Listening
 
 bot.on('voice', async (content, next) => {
 
   const { voice: { file_id }, from: { username } } = content.message
-  const filename = `${username}-${file_id}`
-  const url = await content.telegram.getFileLink(file_id)
-  const path = resolve(__dirname, '..', 'temp', 'voices', `${filename}.ogg`)
-  // const writer = createWriteStream(path)
+
 
   console.log(content.session.voiceId)
 
   if (content.session.voiceId) content.reply('Seu audio anterior foi substituido')
 
   content.session.voiceId = file_id
-
-  // const response = await axios({
-  //   url: url.href,
-  //   method: 'GET',
-  //   responseType: 'stream'
-  // })
-
-  // response.data.pipe(writer)
-
-  // new Promise((resolve, reject) => {
-  //   writer.on('finish', resolve)
-  //   writer.on('error', reject)
-  // })
 
 })
 
@@ -111,7 +95,13 @@ bot.command('list_students', content => {
 // Actions
 
 bot.action(/sendAudio (.+)/, async content => {
-  await telegramOptions.sendMessage(content.match[1], 'Oiiii')
+  // await telegramOptions.sendMessage(content.match[1], 'Oiiii')
+
+  const [userId, firstName, lastName] = content.match[1].split(' ')
+  const userName = `${firstName} ${lastName}`
+
+  await sendAudio({ content, userId, userName })
+
 })
 
 // Functions
@@ -124,6 +114,36 @@ const listStudents = (content) => {
       { columns: 2 }
     ),
   })
+}
+
+const sendAudio = async ({ content, userId, userName }) => {
+  const audioId = content.session.voiceId
+  const url = await content.telegram.getFileLink(audioId)
+
+  await downloadAudio({ url, audioId, name: userName })
+
+
+}
+
+const downloadAudio = async ({ url, audioId, name }) => {
+
+  const filename = `${name}-${audioId}`
+  const path = resolve(__dirname, '..', 'temp', 'voices', `${filename}.ogg`)
+  const writer = createWriteStream(path)
+
+  const response = await axios({
+    url: url.href,
+    method: 'GET',
+    responseType: 'stream'
+  })
+
+  response.data.pipe(writer)
+
+  new Promise((resolve, reject) => {
+    writer.on('finish', resolve)
+    writer.on('error', reject)
+  })
+
 }
 
 // Launch
